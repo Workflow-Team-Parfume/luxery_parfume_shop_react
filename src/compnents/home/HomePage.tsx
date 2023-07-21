@@ -15,6 +15,7 @@ import Toolbar from '@mui/material/Toolbar';
 import Typography from '@mui/material/Typography';
 import Container from '@mui/material/Container';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
+import HomeHeader from "./HomeHeader";
 
 function Copyright() {
   return (
@@ -39,14 +40,7 @@ const HomePage = () => {
     return (
         <ThemeProvider theme={defaultTheme}>
           <CssBaseline />
-          <AppBar position="relative">
-            <Toolbar>
-              <CameraIcon sx={{ mr: 2 }} />
-              <Typography variant="h6" color="inherit" noWrap>
-                Album layout
-              </Typography>
-            </Toolbar>
-          </AppBar>
+          <HomeHeader />
           <main>
             {/* Hero unit */}
             <Box
@@ -96,7 +90,7 @@ const HomePage = () => {
                           // 16:9
                           pt: '56.25%',
                         }}
-                        image="https://source.unsplash.com/random?wallpapers"
+                        image="https://picsum.photos/seed/picsum/200/300"
                       />
                       <CardContent sx={{ flexGrow: 1 }}>
                         <Typography gutterBottom variant="h5" component="h2">

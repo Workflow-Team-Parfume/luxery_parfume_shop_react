@@ -1,4 +1,3 @@
-import React from "react";
 import { Link } from "react-router-dom";
 import {
   List,
@@ -10,16 +9,6 @@ import {
   ListItemButton,
   Drawer,
 } from "@mui/material";
-import {
-  Home,
-  Folder,
-  ShoppingCart,
-  People,
-  ShowChart,
-  Extension,
-  Settings,
-  ExitToApp,
-} from "@mui/icons-material";
 import InboxIcon from "@mui/icons-material/MoveToInbox";
 import MailIcon from "@mui/icons-material/Mail";
 import HomeIcon from "@mui/icons-material/Home";
