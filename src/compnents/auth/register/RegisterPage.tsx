@@ -1,9 +1,7 @@
 import { useState } from "react";
 import { useFormik } from "formik";
-
+import * as Yup from "yup";
 import { Link, useNavigate } from "react-router-dom";
-import { IRegisterPage } from "./types";
-import CropperModal from "../../common/CropperModal";
 import {
   Avatar,
   Box,
@@ -18,34 +16,118 @@ import {
 } from "@mui/material";
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import { Copyright } from "@mui/icons-material";
+import http_common from "../../../http_common";
+import { AuthUserActionType, IRegister, IUser } from "../types";
+import { useDispatch } from "react-redux";
+import jwtDecode from "jwt-decode";
 
 const RegisterPage = () => {
-  const navigate = useNavigate();
+  const dispatch = useDispatch();
 
-  const init: IRegisterPage = {
-    email: '',
-    password: '',
-    phoneNumber: '',
-    username: '',
-  };
-  const [message, setMessage] = useState<string>("");
-
-  const onSubmitFormik = async (values: IRegisterPage) => {
-    try {
-      console.log("Register user");
-      navigate("/");
-    } catch {
-      setMessage("Дані вказнао не вірно");
-    }
+  const initialValues: IRegister = {
+    userName: "",
+    email: "",
+    phoneNumber: "",
+    password: "",
+    passwordConfirmation: "",
   };
 
-  const formik = useFormik({
-    initialValues: init,
-    onSubmit: onSubmitFormik,
+  const registerSchema = Yup.object().shape({
+    userName: Yup.string()
+      .required("Name is required")
+      .min(3, "Name must be at least 3 characters")
+      .max(16, "Name must be at most 16 characters")
+      .test("checkUsername", "Name already exists", async (value) => {
+        if (isSubmit) {
+          setIsSubmit(false);
+          try {
+            const result = await http_common.get(
+              `api/Account/checkUsernameExists/${value}`
+            );
+            const { data } = result;
+            return !data;
+          } catch (error) {
+            console.error("Error during userName validation:", error);
+            return false;
+          }
+        } else return true;
+      }),
+    email: Yup.string()
+      .required("Email is required")
+      .email("Invalid email")
+      .test("checkEmail", "Email already registered", async (value) => {
+        if (isSubmit) {
+          setIsSubmit(false);
+          try {
+            const result = await http_common.get(
+              `api/Account/checkEmailExists/${value}`
+            );
+            const { data } = result;
+            return !data;
+          } catch (error) {
+            console.error("Error during email validation:", error);
+            return false;
+          }
+        } else return true;
+      }),
+    phoneNumber: Yup.string().required("Phone number is required"),
+    password: Yup.string()
+      .required("Password is required")
+      .min(8, "Password must be at least 8 characters")
+      .max(16, "Password must be at most 16 characters")
+      .matches(/[a-z]/, "Password must contain at least 1 lowercase letter")
+      .matches(/[A-Z]/, "Password must contain at least 1 uppercase letter")
+      .matches(/[0-9]/, "Password must contain at least 1 number")
+      .matches(
+        /[!@#$%^&*(),.?":{}|<>]/,
+        "Password must contain at least 1 special character"
+      ),
+    passwordConfirmation: Yup.string()
+      .required("Password confirmation is required")
+      .oneOf([Yup.ref("password")], "Passwords must match"),
   });
 
-  const { values, handleChange, handleSubmit, setFieldValue } = formik;
+  const navigate = useNavigate();
+  const [isSubmit, setIsSubmit] = useState<boolean>(false);
 
+  const onHandleSubmit = async (values: IRegister) => {
+    try {
+      await registerSchema.validate(values);
+      await http_common.post("api/Users/register", values).then(async () => {
+        const result = await http_common.post("api/Users/login", {
+          email: values.email,
+          password: values.password,
+        });
+
+        const { data } = result;
+        const token = data.token;
+        localStorage.token = token;
+        var user = jwtDecode(token) as IUser;
+        dispatch({
+          type: AuthUserActionType.LOGIN_USER,
+          payload: {
+            id: user.id,
+            userName: user.userName,
+            email: user.email,
+            profilePicture: user.profilePicture,
+            registrationDate: user.registrationDate,
+            phoneNumber: user.phoneNumber,
+            roles: user.roles,
+          },
+        });
+        navigate(-1);
+      });
+    } catch (error) {
+      console.error("Error during register: ", error);
+    }
+  };
+  const formik = useFormik({
+    initialValues: initialValues,
+    validationSchema: registerSchema,
+    onSubmit: onHandleSubmit,
+  });
+
+  const { values, handleChange, handleSubmit, touched, errors } = formik;
   return (
     <Container component="main" maxWidth="xs">
       <CssBaseline />
@@ -64,7 +146,7 @@ const RegisterPage = () => {
           Sign up
         </Typography>
         <Box component="form" noValidate onSubmit={handleSubmit} sx={{ mt: 3 }}>
-        <Grid container spacing={2}>
+          <Grid container spacing={2}>
             <Grid item xs={12}>
               <TextField
                 required
@@ -73,7 +155,7 @@ const RegisterPage = () => {
                 label="Username"
                 name="username"
                 onChange={handleChange}
-                value={values.username}
+                value={values.userName}
                 autoComplete="username"
               />
             </Grid>
@@ -129,13 +211,12 @@ const RegisterPage = () => {
           >
             Sign Up
           </Button>
-          {/* <Grid container justifyContent="flex-end">
-              <Grid item>
-                <Link to="login" variant="body2">
-                  Already have an account? Sign in
-                </Link>
-              </Grid>
-            </Grid> */}
+          <Typography variant="body2">
+            Already have an account?{" "}
+            <Link  to="/login">
+              Sign in
+            </Link>
+          </Typography>
         </Box>
       </Box>
       <Copyright sx={{ mt: 5 }} />

@@ -12,20 +12,31 @@ import Button from "@mui/material/Button";
 import Tooltip from "@mui/material/Tooltip";
 import MenuItem from "@mui/material/MenuItem";
 import AdbIcon from "@mui/icons-material/Adb";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
+import { AuthUserActionType, IAuthUser } from "../auth/types";
+import SearchIcon from '@mui/icons-material/Search';
+import MoreIcon from '@mui/icons-material/MoreVert';
 
 const pages = [
-  { title: "ProductList", route: "/productlist" },
-  { title: "About", route: "/about" },
+  { title: "Парфуми", route: "/productlist" },
+  { title: "Розлив", route: "/about" },
+  { title: "Догляд", route: "/about" },
 ];
 
-const settings = ["Profile", "Account", "Dashboard", "Logout"];
+const settings = ["Profile", "Account", "Dashboard"];
 
-const HomeHeader = () =>{
+const HomeHeader = () => {
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const { user, isAuth } = useSelector((store: any) => store.auth as IAuthUser);
   const [anchorElNav, setAnchorElNav] = React.useState<null | HTMLElement>(
     null
   );
   const [anchorElUser, setAnchorElUser] = React.useState<null | HTMLElement>(
+    null
+  );
+  const [anchorElLogin, setAnchorElLogin] = React.useState<null | HTMLElement>(
     null
   );
 
@@ -35,7 +46,9 @@ const HomeHeader = () =>{
   const handleOpenUserMenu = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorElUser(event.currentTarget);
   };
-
+  const handleOpenLoginMenu = (event: React.MouseEvent<HTMLElement>) => {
+    setAnchorElLogin(event.currentTarget);
+  };
   const handleCloseNavMenu = () => {
     setAnchorElNav(null);
   };
@@ -43,9 +56,23 @@ const HomeHeader = () =>{
   const handleCloseUserMenu = () => {
     setAnchorElUser(null);
   };
+  const handleCloseLoginMenu = () => {
+    setAnchorElLogin(null);
+  };
+  const onLogoutHandler = (e: React.MouseEvent<HTMLElement>) => {
+    e.preventDefault();
+    //console.log("logout");
+    localStorage.removeItem("token");
+    dispatch({ type: AuthUserActionType.LOGOUT_USER });
+    setAnchorElUser(null);
+    navigate("/");
+  };
 
   return (
-    <AppBar position="fixed" sx={{ zIndex: (theme) => theme.zIndex.drawer + 1 }}>
+    <AppBar
+      position="fixed"
+      sx={{ zIndex: (theme) => theme.zIndex.drawer + 1 }}
+    >
       <Container maxWidth="xl">
         <Toolbar disableGutters>
           <AdbIcon sx={{ display: { xs: "none", md: "flex" }, mr: 1 }} />
@@ -136,11 +163,16 @@ const HomeHeader = () =>{
                 onClick={handleCloseNavMenu}
                 sx={{ my: 2, color: "white", display: "block" }}
               >
-                <Link style={{ color: 'white', textDecoration: 'none' }} to={page.route}>{page.title}</Link>
+                <Link
+                  style={{ color: "white", textDecoration: "none" }}
+                  to={page.route}
+                >
+                  {page.title}
+                </Link>
               </Button>
             ))}
           </Box>
-
+          {isAuth ? (
           <Box sx={{ flexGrow: 0 }}>
             <Tooltip title="Open settings">
               <IconButton onClick={handleOpenUserMenu} sx={{ p: 0 }}>
@@ -168,8 +200,50 @@ const HomeHeader = () =>{
                   <Typography textAlign="center">{setting}</Typography>
                 </MenuItem>
               ))}
+              <MenuItem key={"Logout"} onClick={onLogoutHandler}>
+                <Typography textAlign="center">Logout</Typography>
+              </MenuItem>
             </Menu>
           </Box>
+          ): (      
+            <Box sx={{ flexGrow: 0 }}>
+            <IconButton size="large" aria-label="search" color="inherit">
+            <SearchIcon />
+          </IconButton>
+          <IconButton
+            size="large"
+            aria-label="display more actions"
+            edge="end"
+            color="inherit"
+            onClick={handleOpenLoginMenu}
+            >
+            <MoreIcon />
+          </IconButton>
+          <Menu
+              sx={{ mt: "45px" }}
+              id="menu-appbar"
+              anchorEl={anchorElLogin}
+              anchorOrigin={{
+                vertical: "top",
+                horizontal: "right",
+              }}
+              keepMounted
+              transformOrigin={{
+                vertical: "top",
+                horizontal: "right",
+              }}
+              open={Boolean(anchorElLogin)}
+              onClose={handleCloseLoginMenu}
+            >
+              <MenuItem key={"Login"}>
+                <Typography textAlign="center" sx={{color: "black", textDecoration: "none"}} component={Link} to="/login">Login</Typography>
+              </MenuItem>
+              <MenuItem key={"Register"}>
+                <Typography textAlign="center" sx={{color: "black", textDecoration: "none"}}  component={Link} to="/register">Register</Typography>
+              </MenuItem>
+            </Menu>
+              </Box>
+          )}
         </Toolbar>
       </Container>
     </AppBar>
